@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Netflix İçerik Analizi Dashboard</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Style CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Toast Notification -->
+        <div id="toast" class="toast hidden">
+            <span class="toast-icon"><i data-lucide="info"></i></span>
+            <span id="toast-message" class="toast-message">İşlem başarılı</span>
+        </div>
+
+        <!-- Header -->
+        <header class="main-header">
+            <div class="header-logo">
+                <span class="netflix-text">NETFLIX</span>
+                <span class="badge">ANALİZ</span>
+            </div>
+
+            <div class="header-actions">
+                <button id="run-analysis-btn" class="btn btn-primary btn-glow">
+                    <i data-lucide="play" class="btn-icon"></i>
+                    <span>Analizi Yeniden Çalıştır</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Sidebar & Main Content Layout -->
+        <div class="layout-body">
+            <!-- Sidebar Navigation -->
+            <nav class="sidebar">
+                <ul class="nav-menu">
+                    <li class="nav-item active" data-tab="overview">
+                        <i data-lucide="layout-dashboard"></i>
+                        <span>Genel Bakış</span>
+                    </li>
+                    <li class="nav-item" data-tab="country-analysis">
+                        <i data-lucide="globe"></i>
+                        <span>Ülke Analizi</span>
+                    </li>
+                    <li class="nav-item" data-tab="growth-trends">
+                        <i data-lucide="trending-up"></i>
+                        <span>Zaman Trendleri</span>
+                    </li>
+                    <li class="nav-item" data-tab="content-explorer">
+                        <i data-lucide="search"></i>
+                        <span>İçerik Gezgini</span>
+                    </li>
+                    <li class="nav-item" data-tab="insights">
+                        <i data-lucide="lightbulb"></i>
+                        <span>Stratejik Bulgular</span>
+                    </li>
+                </ul>
+                <div class="sidebar-footer">
+                    <div class="dataset-info">
+                        <p class="info-label">Veri Kümesi:</p>
+                        <p id="dataset-name" class="info-value">netflix_titles.csv</p>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Main Content Area -->
+            <main class="main-content">
+
+                <!-- LOADING SCREEN -->
+                <div id="loading-screen" class="loading-container hidden">
+                    <div class="spinner-box">
+                        <div class="configure-border-1">
+                            <div class="configure-core"></div>
+                        </div>
+                        <div class="configure-border-2">
+                            <div class="configure-core"></div>
+                        </div>
+                    </div>
+                    <p class="loading-text">Veriler yükleniyor ve işleniyor...</p>
+                </div>
+
+                <!-- TAB: OVERVIEW -->
+                <section id="tab-overview" class="tab-section active">
+                    <div class="section-header">
+                        <h1>Genel Bakış</h1>
+                        <p class="section-desc">Kütüphane yapısı ve temel büyüklük metrikleri</p>
+                    </div>
+
+                    <!-- KPI Cards Grid -->
+                    <div class="kpi-grid">
+                        <div class="kpi-card">
+                            <div class="kpi-icon-box card-red">
+                                <i data-lucide="film"></i>
+                            </div>
+                            <div class="kpi-info">
+                                <span class="kpi-title">Toplam İçerik</span>
+                                <h3 id="kpi-total" class="kpi-value">-</h3>
+                            </div>
+                            <div class="kpi-footer text-muted">Kütüphane büyüklüğü</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-icon-box card-red-glow">
+                                <i data-lucide="video"></i>
+                            </div>
+                            <div class="kpi-info">
+                                <span class="kpi-title">Filmler</span>
+                                <h3 id="kpi-movies" class="kpi-value">-</h3>
+                            </div>
+                            <div id="kpi-movies-pct" class="kpi-footer percent-up">-</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-icon-box card-dark">
+                                <i data-lucide="tv"></i>
+                            </div>
+                            <div class="kpi-info">
+                                <span class="kpi-title">Diziler (TV Shows)</span>
+                                <h3 id="kpi-shows" class="kpi-value">-</h3>
+                            </div>
+                            <div id="kpi-shows-pct" class="kpi-footer percent-down">-</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-icon-box card-gold">
+                                <i data-lucide="calendar"></i>
+                            </div>
+                            <div class="kpi-info">
+                                <span class="kpi-title">En Aktif Yıl</span>
+                                <h3 id="kpi-active-year" class="kpi-value">-</h3>
+                            </div>
+                            <div id="kpi-active-year-sub" class="kpi-footer text-muted">-</div>
+                        </div>
+                    </div>
+
+                    <!-- Overview Content Grid -->
+                    <div class="content-grid-2">
+                        <!-- Chart Card -->
+                        <div class="dashboard-card">
+                            <div class="card-header">
+                                <h3>Film & Dizi Oranı</h3>
+                                <p class="card-subtitle">Kütüphane tür dağılım yüzdesi</p>
+                            </div>
+                            <div class="card-body chart-container-pie">
+                                <canvas id="pieChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Statistics Card -->
+                        <div class="dashboard-card">
+                            <div class="card-header">
+                                <h3>Hızlı Analiz Bulguları</h3>
+                                <p class="card-subtitle">Önemli istatistiki özetler</p>
+                            </div>
+                            <div class="card-body">
+                                <ul class="insight-list">
+                                    <li>
+                                        <div class="insight-number">1</div>
+                                        <div class="insight-text">
+                                            <strong>Film oranı:</strong> Veri setindeki içeriklerin
+                                            <span class="highlight-red" id="stat-movies-pct-text">%65.4</span>'ü film olarak etiketlenmiştir.
+                                        </div>
+                                    </li>
+                                    <li>
+                                        <div class="insight-number">2</div>
+                                        <div class="insight-text">
+                                            <strong>İçerik türü:</strong> Film ve dizi oranları yüklenen dosyadaki kayıt sayılarına göre hesaplanır.
+                                        </div>
+                                    </li>
+                                    <li>
+                                        <div class="insight-number">3</div>
+                                        <div class="insight-text">
+                                            <strong>Üretim Zirvesi:</strong> <span class="highlight-gold" id="stat-peak-year">—</span>, veri setinde en çok kaydın ait olduğu yayın yılıdır.
+                                        </div>
+                                    </li>
+                                    <li>
+                                        <div class="insight-number">4</div>
+                                        <div class="insight-text">
+                                            <strong>Çoklu Ülke Ortaklıkları:</strong> İçeriklerin yaklaşık <span class="highlight-white" id="stat-co-productions-pct">%12</span>'si iki veya daha fazla ülkenin ortak yapımı olarak kütüphanede yer almaktadır.
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TAB: COUNTRY ANALYSIS -->
+                <section id="tab-country-analysis" class="tab-section">
+                    <div class="section-header">
+                        <h1>Ülke Bazlı İçerik Dağılımı</h1>
+                        <p class="section-desc">En çok içerik üreten ilk 15 ülkenin analizi</p>
+                    </div>
+
+                    <div class="dashboard-card full-width">
+                        <div class="card-header flex-header">
+                            <div>
+                                <h3>Ülkelere Göre Yapım Sayıları</h3>
+                                <p class="card-subtitle">Film ve Dizi bazında kırılımlar</p>
+                            </div>
+                            <!-- Chart Filter Buttons -->
+                            <div class="toggle-group" id="country-chart-filters">
+                                <button class="btn btn-sm btn-secondary active" data-type="all">Tümü</button>
+                                <button class="btn btn-sm btn-secondary" data-type="Movie">Filmler</button>
+                                <button class="btn btn-sm btn-secondary" data-type="TV Show">Diziler</button>
+                            </div>
+                        </div>
+                        <div class="card-body main-chart-box">
+                            <canvas id="countryBarChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="content-grid-2" style="margin-top: 2rem;">
+                        <div class="dashboard-card">
+                            <div class="card-header">
+                                <h3>En Popüler Ülke İstatistikleri</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-container">
+                                    <table class="simple-table" id="country-summary-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Sıra</th>
+                                                <th>Ülke</th>
+                                                <th>Film</th>
+                                                <th>Dizi</th>
+                                                <th>Toplam</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <!-- Dynamically filled -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="dashboard-card">
+                            <div class="card-header">
+                                <h3>Bölgesel Dağılım Analizi</h3>
+                            </div>
+                            <div class="card-body insight-card-body">
+                                <div class="text-block">
+                                    <p>Tablo, katalogdaki içeriklerin yapım ülkelerine göre film ve dizi dağılımını gösterir. Ortak yapımlar listelenen her ülkede bir kez sayılır.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TAB: GROWTH TRENDS -->
+                <section id="tab-growth-trends" class="tab-section">
+                    <div class="section-header">
+                        <h1>Zaman Serisi Büyüme Trendleri</h1>
+                        <p class="section-desc">Yıllara göre kütüphaneye eklenen veya üretilen içeriklerin büyüme hızı</p>
+                    </div>
+
+                    <div class="dashboard-card full-width">
+                        <div class="card-header flex-header">
+                            <div>
+                                <h3>Yıllık İçerik Büyümesi</h3>
+                                <p class="card-subtitle">Veri setindeki içerik türlerinin yayın yılına göre dağılımı</p>
+                            </div>
+
+                            <!-- Range Slider or Year Display -->
+                            <div class="year-range-display">
+                                Yıl Aralığı: <span id="year-range-label" class="highlight-red">1990 - 2021</span>
+                            </div>
+                        </div>
+                        <div class="card-body main-chart-box">
+                            <canvas id="growthLineChart"></canvas>
+                        </div>
+                    </div>
+
+                </section>
+
+                <!-- TAB: CONTENT EXPLORER -->
+                <section id="tab-content-explorer" class="tab-section">
+                    <div class="section-header">
+                        <h1>İçerik Gezgini</h1>
+                        <p class="section-desc">Kütüphanedeki tüm içerikleri arayın ve detaylıca filtreleyin</p>
+                    </div>
+
+                    <!-- Filter Area -->
+                    <div class="filter-card">
+                        <div class="filter-row">
+                            <div class="filter-group flex-2">
+                                <label for="search-input">Arama Terimi</label>
+                                <div class="search-box-wrapper">
+                                    <i data-lucide="search" class="search-box-icon"></i>
+                                    <input type="text" id="search-input" placeholder="Başlık, yönetmen, oyuncu veya açıklama ara...">
+                                </div>
+                            </div>
+                            <div class="filter-group">
+                                <label for="filter-type">Tür</label>
+                                <select id="filter-type">
+                                    <option value="all">Tümü</option>
+                                    <option value="Movie">Film</option>
+                                    <option value="TV Show">Dizi</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label for="filter-country">Ülke</label>
+                                <select id="filter-country">
+                                    <option value="all">Tüm Ülkeler</option>
+                                    <!-- Dynamic -->
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label for="filter-rating">Rating</label>
+                                <select id="filter-rating">
+                                    <option value="all">Tüm Dereceler</option>
+                                    <!-- Dynamic -->
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label for="filter-year">Yayın Yılı</label>
+                                <select id="filter-year">
+                                    <option value="all">Tüm Yıllar</option>
+                                    <!-- Dynamic -->
+                                </select>
+                            </div>
+                        </div>
+                        <div class="filter-actions-row">
+                            <span class="results-count" id="results-count">Toplam 0 sonuç bulundu</span>
+                            <button id="clear-filters-btn" class="btn btn-sm btn-secondary">
+                                <i data-lucide="rotate-ccw"></i>
+                                <span>Filtreleri Temizle</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Data Table -->
+                    <div class="dashboard-card full-width no-padding">
+                        <div class="table-scroll-container">
+                            <table class="data-table" id="explorer-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Tip</th>
+                                        <th>Başlık</th>
+                                        <th>Yönetmen</th>
+                                        <th>Ülke</th>
+                                        <th>Yıl</th>
+                                        <th>Süre</th>
+                                        <th>Kategoriler</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Dynamically filled -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Table Pagination -->
+                        <div class="table-pagination">
+                            <button id="prev-page-btn" class="btn btn-sm btn-secondary"><i data-lucide="chevron-left"></i> Önceki</button>
+                            <span id="page-indicator" class="page-indicator">Sayfa 1 / 1</span>
+                            <button id="next-page-btn" class="btn btn-sm btn-secondary">Sonraki <i data-lucide="chevron-right"></i></button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TAB: INSIGHTS -->
+                <section id="tab-insights" class="tab-section">
+                    <div class="section-header">
+                        <h1>Stratejik Çıkarımlar</h1>
+                        <p class="section-desc">Katalog verisiyle incelenebilen sorular ve analizin sınırları</p>
+                    </div>
+
+                    <div class="dashboard-card full-width">
+                        <div class="card-body">
+                            <p>CSV dosyası eklenmediyse uygulama 6.000 sentetik kayıt üretir.</p>
+                            <p>Ülke dağılımı yapım ülkesini gösterir. Birden fazla ülkesi olan içerikler her ülkede sayılır.</p>
+                            <p>Yıllık grafik yayın yılına göre kayıt sayısını gösterir. İzlenme, abonelik ve yatırım verileri bu analizin kapsamı dışındadır.</p>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- PapaParse for CSV parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <!-- Chart.js for visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Dashboard Script -->
+    <script src="dashboard.js"></script>
+</body>
+</html>
